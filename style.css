@@ -1,0 +1,68 @@
+/* Reset and center the game on the screen */
+body {
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    height: 100vh; 
+    margin: 0;
+    background-color: #f7f7f7;
+    font-family: 'Courier New', monospace; /* Classic T-Rex game font feel */
+}
+
+/* The Game World Container */
+#game-container {
+    width: 600px;
+    height: 150px;
+    border-bottom: 3px solid #333; /* The ground line */
+    position: relative; 
+    overflow: hidden; /* Crucial: Hides obstacles off-screen */
+    background-color: #fff;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* The Dino Character */
+#dino {
+    width: 25px;
+    height: 45px;
+    background-color: #555; /* Simple dark gray Dino */
+    position: absolute;
+    bottom: 0px; 
+    left: 20px;
+    transition: background-color 0.1s; /* Subtle transition for feedback */
+}
+
+/* The Obstacle (Cactus) */
+#obstacle {
+    width: 20px;
+    height: 35px;
+    background-color: #008000; /* Simple green cactus */
+    position: absolute;
+    bottom: 0px; 
+    /* The right position will be controlled by JavaScript for movement */
+}
+
+/* Score Display */
+#score {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5em;
+    color: #333;
+}
+
+/* Game Over Screen - Initially hidden */
+#game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* Initially hide the game over message */
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #e74c3c;
+    background-color: rgba(255, 255, 255, 0.9);
+    z-index: 10;
+}
