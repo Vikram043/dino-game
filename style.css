@@ -20,25 +20,31 @@ body {
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
 }
 
-/* The Dino Character */
+/* ... (body and #game-container styles remain the same) ... */
+
+/* The Dino Character - Now uses a sprite sheet for animation */
 #dino {
-    width: 25px;
-    height: 45px;
-    background-color: #555; /* Simple dark gray Dino */
+    width: 44px; /* Adjust to individual dino frame width */
+    height: 47px; /* Adjust to dino frame height */
+    background-image: url('images/dino_sprites.png'); /* Path to your sprite sheet */
+    background-size: auto 47px; /* Adjust background-size to fit height and allow horizontal scrolling */
+    background-position: 0px 0px; /* Start at the first frame */
     position: absolute;
     bottom: 0px; 
     left: 20px;
-    transition: background-color 0.1s; /* Subtle transition for feedback */
+    image-rendering: pixelated; /* Keeps pixel art sharp */
 }
 
-/* The Obstacle (Cactus) */
+/* The Obstacle (Cactus) - Now uses a PNG */
 #obstacle {
-    width: 20px;
-    height: 35px;
-    background-color: #008000; /* Simple green cactus */
+    width: 25px; /* Adjust to cactus image width */
+    height: 45px; /* Adjust to cactus image height */
+    background-image: url('images/cactus.png'); /* Path to your cactus image */
+    background-size: cover; /* Make sure the image covers the element */
+    background-repeat: no-repeat; /* Prevent tiling */
+    background-position: center bottom; /* Anchor to the bottom for ground alignment */
     position: absolute;
     bottom: 0px; 
-    /* The right position will be controlled by JavaScript for movement */
 }
 
 /* Score Display */
@@ -48,16 +54,18 @@ body {
     right: 10px;
     font-size: 1.5em;
     color: #333;
+    z-index: 5; /* Ensure score is above other elements */
 }
 
-/* Game Over Screen - Initially hidden */
+/* Game Over Screen - Now includes final score */
 #game-over {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: none; /* Initially hide the game over message */
+    display: none; 
+    flex-direction: column; /* Stack elements vertically */
     justify-content: center;
     align-items: center;
     font-size: 1.8em;
@@ -65,4 +73,10 @@ body {
     color: #e74c3c;
     background-color: rgba(255, 255, 255, 0.9);
     z-index: 10;
+}
+
+#game-over p {
+    font-size: 0.8em;
+    margin-top: 10px;
+    color: #555;
 }
