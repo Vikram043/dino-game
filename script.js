@@ -35,7 +35,7 @@ function jump() {
     
     // --- NEW! Stop running animation when jumping ---
     clearInterval(dinoAnimationInterval);
-    dino.style.backgroundImage = "url('images/dino_sprites.png')"; // Ensure correct sprite sheet
+    dino.style.backgroundImage = "url('dino_sprites.svg')"; // Ensure correct sprite sheet
     dino.style.backgroundPosition = '-88px 0px'; // Assuming jump frame is at -88px (adjust based on your sprite)
 
     let upInterval = setInterval(() => {
@@ -89,7 +89,7 @@ function startGame() {
     obstacle.style.display = 'block'; 
     scoreDisplay.textContent = 'Score: 0';
     dino.style.opacity = '1'; // Make dino fully visible again
-    dino.style.backgroundImage = "url('images/dino_sprites.png')"; // Ensure correct sprite sheet
+    dino.style.backgroundImage = "url('dino_sprites.svg')"; // Ensure correct sprite sheet
 
     dino.style.left = dinoX + 'px'; 
     obstacle.style.left = obstaclePosition + 'px';

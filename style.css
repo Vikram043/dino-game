@@ -26,7 +26,7 @@ body {
 #dino {
     width: 44px; /* Adjust to individual dino frame width */
     height: 47px; /* Adjust to dino frame height */
-    background-image: url('images/dino_sprites.jpg'); /* Path to your sprite sheet */
+    background-image: url('dino_sprites.svg'); /* Path to your sprite sheet */
     background-size: auto 47px; /* Adjust background-size to fit height and allow horizontal scrolling */
     background-position: 0px 0px; /* Start at the first frame */
     position: absolute;
@@ -39,7 +39,7 @@ body {
 #obstacle {
     width: 25px; /* Adjust to cactus image width */
     height: 45px; /* Adjust to cactus image height */
-    background-image: url('images/cactus.jpg'); /* Path to your cactus image */
+    background-image: url('cactus.jpg'); /* Path to your cactus image */
     background-size: cover; /* Make sure the image covers the element */
     background-repeat: no-repeat; /* Prevent tiling */
     background-position: center bottom; /* Anchor to the bottom for ground alignment */
