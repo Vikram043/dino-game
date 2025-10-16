@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dino Game — Vikram</title>
+  <style>
+    /* Reset + layout */
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%}
+    body{
+      display:flex;align-items:center;justify-content:center;
+      background: linear-gradient(180deg,#cfe9ff,#f7fbff);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;
+      color:#222;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .stage{
+      width:900px;max-width:95vw;height:220px;position:relative;
+      background:linear-gradient(180deg,#e9f6ff,#fff);
+      border-radius:12px;padding:18px;box-shadow:0 12px 30px rgba(15,40,80,0.12);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    }
+
+    header{width:100%;display:flex;justify-content:space-between;align-items:center}
+    h1{font-size:18px;font-weight:700;letter-spacing:0.4px}
+
+    .score{
+      font-weight:700;padding:6px 10px;border-radius:8px;background:rgba(0,0,0,0.06);
+      display:flex;gap:8px;align-items:center;font-family:monospace
+    }
+    .score .value{font-size:16px}
+
+    /* ground & world */
+    .world{position:relative;width:100%;height:120px;background:transparent;overflow:hidden}
+    .ground{
+      position:absolute;left:0;right:0;bottom:12px;height:12px;background:linear-gradient(90deg,#6b4  ,#4d4d4d);
+      background:#222;border-radius:6px;
+      box-shadow:0 8px 12px rgba(0,0,0,0.15) inset
+    }
+
+    /* Dino */
+    .dino{
+      position:absolute;left:64px;bottom:24px;width:48px;height:48px;border-radius:8px;background:#111;
+      display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;user-select:none;
+      transform-origin:center bottom; will-change:transform
+    }
+
+    /* simple eyes/leg aesthetic */
+    .dino::before{content:'';position:absolute;left:10px;top:14px;width:6px;height:6px;border-radius:50%;background:#fff;opacity:0.9}
+
+    /* obstacles */
+    .obstacle{position:absolute;bottom:24px;width:28px;height:48px;background:linear-gradient(180deg,#2d2  ,#111);border-radius:6px;right:-40px}
+
+    /* cacti variety */
+    .obstacle.tall{height:68px;bottom:4px}
+    .obstacle.wide{width:42px}
+
+    /* clouds/background */
+    .cloud{position:absolute;top:18px;right:-120px;font-size:12px;color:#9bb7d6;opacity:0.95}
+
+    /* overlay on game over */
+    .overlay{
+      position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0.6));
+      display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:18px
+    }
+    .overlay.show{display:flex}
+    .panel{background:white;padding:14px 20px;border-radius:10px;box-shadow:0 8px 20px rgba(10,20,50,0.12);text-align:center}
+    .panel h2{margin-bottom:6px}
+    .btn{padding:8px 12px;border-radius:8px;border:0;font-weight:700;cursor:pointer}
+    .btn.primary{background:#0b67ff;color:#fff}
+    .btn.ghost{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+
+    /* small helpful hint */
+    .hint{font-size:12px;color:#3b4d5e;opacity:0.85}
+
+    /* responsive */
+    @media (max-width:520px){
+      .stage{height:260px;padding:12px}
+      .world{height:160px}
+      .dino{left:36px;width:40px;height:40px}
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" role="application" aria-label="Dino running game">
+    <header>
+      <h1>Retro Dino Runner</h1>
+      <div class="score" aria-live="polite">Score: <span class="value" id="score">0</span></div>
+    </header>
+
+    <section class="world" id="world">
+      <div class="dino" id="dino" title="Press Space / ArrowUp to jump">D</div>
+      <!-- obstacles will be injected here -->
+      <div class="ground"></div>
+
+      <div class="overlay" id="overlay" aria-hidden="true">
+        <div class="panel">
+          <h2 id="overText">Game Over</h2>
+          <p id="finalScore">Score: 0</p>
+          <div style="display:flex;gap:8px;justify-content:center;">
+            <button class="btn primary" id="playAgain">Play Again</button>
+            <button class="btn ghost" id="shareBtn">Share Score</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="hint">Controls: Space / Arrow Up to jump. Click or tap the stage to jump on touch devices.</p>
+  </main>
+
+  <script>
+    /* ======= Dino Runner (vanilla JS) =======
+       Single-file game: jump, obstacles, collision, score, restart.
+
+       Author: ChatGPT for Student-Developer Vikram
+    */
+
+    // DOM
+    const dino = document.getElementById('dino');
+    const world = document.getElementById('world');
+    const scoreEl = document.getElementById('score');
+    const overlay = document.getElementById('overlay');
+    const finalScore = document.getElementById('finalScore');
+    const playAgain = document.getElementById('playAgain');
+
+    // Game state
+    let gameRunning = false;
+    let gameOver = false;
+    let score = 0;
+
+    // Physics
+    const GRAVITY = 1800; // px/s^2
+    const JUMP_VELOCITY = -620; // px/s (negative == up)
+    const FLOOR_Y = 24; // px from bottom to dino bottom
+
+    // Dino runtime state
+    let dinoY = 0; // vertical position above floor
+    let dinoV = 0; // vertical velocity px/s
+
+    // Obstacles
+    const obstacles = [];
+    const OBSTACLE_MIN_GAP = 700; // ms
+    const OBSTACLE_MAX_GAP = 1600; // ms
+    let lastObstacleAt = 0;
+
+    // Timing for game loop
+    let lastFrameTime = null;
+
+    // Difficulty scaling
+    let speed = 420; // px/s base speed obstacles move left
+    const SPEED_INCREASE_EVERY = 1500; // ms score threshold to increase speed
+
+    // Utility: create DOM obstacle
+    function spawnObstacle() {
+      const el = document.createElement('div');
+      el.className = 'obstacle';
+
+      // variety
+      if (Math.random() < 0.25) el.classList.add('tall');
+      if (Math.random() < 0.18) el.classList.add('wide');
+
+      world.appendChild(el);
+
+      const startRight = world.clientWidth + 20;
+      const o = { el, x: startRight, w: el.offsetWidth, h: el.offsetHeight };
+      obstacles.push(o);
+    }
+
+    // Reset game to initial state
+    function resetGame() {
+      // remove obstacles
+      obstacles.forEach(o => o.el.remove());
+      obstacles.length = 0;
+
+      score = 0; scoreEl.textContent = '0';
+      speed = 420; dinoY = 0; dinoV = 0;
+      lastObstacleAt = 0; lastFrameTime = null; gameOver = false; gameRunning = true;
+      overlay.classList.remove('show'); overlay.setAttribute('aria-hidden', 'true');
+      // put dino on floor
+      dino.style.transform = `translateY(0px)`;
+      requestAnimationFrame(loop);
+    }
+
+    // End game
+    function endGame() {
+      gameOver = true; gameRunning = false;
+      finalScore.textContent = 'Score: ' + Math.floor(score);
+      overlay.classList.add('show'); overlay.setAttribute('aria-hidden', 'false');
+    }
+
+    // Input
+    function tryJump() {
+      if (!gameRunning) return;
+      // if on floor or near floor allow jump
+      if (dinoY <= 0.5) {
+        dinoV = JUMP_VELOCITY;
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        e.preventDefault();
+        if (!gameRunning && !gameOver) { gameRunning = true; requestAnimationFrame(loop); }
+        if (gameOver) return; // on gameover only play again button restarts
+        tryJump();
+      }
+      if (e.code === 'KeyR') {
+        if (gameOver) resetGame();
+      }
+    });
+
+    // tap/click to jump or start
+    world.addEventListener('pointerdown', () => {
+      if (!gameRunning && !gameOver) { gameRunning = true; requestAnimationFrame(loop); }
+      if (!gameOver) tryJump();
+    });
+
+    // Play again button
+    playAgain.addEventListener('click', () => {
+      resetGame();
+    });
+
+    // Basic AABB collision check between dino and obstacle DOM rects
+    function checkCollisions() {
+      const dRect = dino.getBoundingClientRect();
+      for (const o of obstacles) {
+        const oRect = o.el.getBoundingClientRect();
+        // small tolerance to reduce false positives
+        const padding = 4;
+        if (!(dRect.right - padding < oRect.left || dRect.left + padding > oRect.right || dRect.bottom - padding < oRect.top || dRect.top + padding > oRect.bottom)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Main loop
+    function loop(t) {
+      if (gameOver) return;
+      if (!lastFrameTime) lastFrameTime = t; // initialize on first frame
+      const dt = Math.min(50, t - lastFrameTime); // ms, clamp to avoid huge jumps
+      lastFrameTime = t;
+
+      // spawn obstacles based on time
+      lastObstacleAt += dt;
+      if (lastObstacleAt > (OBSTACLE_MIN_GAP + Math.random() * (OBSTACLE_MAX_GAP - OBSTACLE_MIN_GAP))) {
+        spawnObstacle(); lastObstacleAt = 0;
+      }
+
+      // update obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const o = obstacles[i];
+        o.x -= (speed * dt) / 1000;
+        o.el.style.transform = `translateX(${o.x}px)`;
+        // remove off-screen
+        if (o.x + o.w < -40) { o.el.remove(); obstacles.splice(i,1); }
+      }
+
+      // apply gravity to dino
+      dinoV += GRAVITY * (dt / 1000);
+      dinoY += dinoV * (dt / 1000);
+      if (dinoY > 0) {
+        // landed
+        dinoY = Math.max(0, dinoY);
+      }
+      if (dinoY < 0) dinoY = 0;
+      dino.style.transform = `translateY(${-Math.round(dinoY)}px)`;
+
+      // score progression
+      score += dt * 0.06; // scale to give a readable increase
+      scoreEl.textContent = Math.floor(score);
+
+      // scaling difficulty
+      speed += (dt/1000) * 2.5; // tiny steady increase
+
+      // collisions
+      if (checkCollisions()) {
+        endGame(); return;
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    // Start in idle mode with a simple intro obstacle to show motion
+    (function startIntro(){
+      // spawn a slow-moving cloud and an obstacle to show what to avoid
+      const cloud = document.createElement('div'); cloud.className='cloud'; cloud.textContent='☁️'; world.appendChild(cloud);
+      const cStart = world.clientWidth + 20; cloud.style.transform = `translateX(${cStart}px)`;
+
+      const obstacle = document.createElement('div'); obstacle.className='obstacle'; world.appendChild(obstacle);
+      obstacle.style.transform = `translateX(${world.clientWidth + 20}px)`;
+      // animate them slowly via CSS-ish JS to show motion while idle
+      let introX = world.clientWidth + 20;
+      let introX2 = world.clientWidth + 90;
+      function introLoop(t){
+        introX -= 0.5; introX2 -= 1.1;
+        cloud.style.transform = `translateX(${introX}px)`;
+        obstacle.style.transform = `translateX(${introX2}px)`;
+        if (!gameRunning) requestAnimationFrame(introLoop);
+      }
+      requestAnimationFrame(introLoop);
+    })();
+
+    // expose reset to allow manual run from console: resetGame()
+    window.resetGame = resetGame;
+
+    // Helpful note printed to console (not required for gameplay)
+    console.log('Dino Game ready — press Space / ArrowUp to start and jump.');
+  </script>
+</body>
+</html>
